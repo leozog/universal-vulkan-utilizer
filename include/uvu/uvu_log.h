@@ -1,7 +1,5 @@
 #pragma once
+#include <string>
 #include <iostream>
 
-void uvu_log(std::string str, char end = '\n')
-{
-    std::cout<<str<<end;
-}
+void uvu_log(std::string str, char end = '\n');
