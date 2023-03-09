@@ -31,6 +31,6 @@ public:
     const VkDeviceQueueCreateInfo *get_queueCreateInfos() const;
     void recive_queues(VkDevice device);
 private:
-    void find_most_suitable_family(UVU_vk_queue *que, std::vector<VkQueueFamilyProperties> &queueFamilyProperties, std::vector<uint32_t> queues_in_family);
-    uint32_t compare_flags(VkQueueFlags a, VkQueueFlags b);
+    void find_most_suitable_family(UVU_vk_queue *que, const std::vector<VkQueueFamilyProperties> &queueFamilyProperties, std::vector<uint32_t> &queues_in_family);
+    uint32_t queue_flags_score(VkQueueFlags q, VkQueueFlags dv);
 };

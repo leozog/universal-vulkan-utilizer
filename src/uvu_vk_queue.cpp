@@ -26,12 +26,14 @@ void UVU_vk_queues::setup_queues(VkPhysicalDevice physicalDevice)
         uvu_log(std::to_string((int)que.queueCount));
     }
 
-    std::vector<uint32_t> queues_in_family(queueFamilyPropertyCount);
-    for(uint32_t &i : queues_in_family)
-        i = 0;
+    std::vector<uint32_t> queues_in_family(queueFamilyPropertyCount, 0);
+    for(auto que : _queue_list)
+        find_most_suitable_family(que, queueFamilyProperties, queues_in_family);
+
     for(auto que : _queue_list)
     {
-        find_most_suitable_family(que, queueFamilyProperties, queues_in_family);
+        uvu_log("----");
+        uvu_log(que->queueFamilyIndex);
     }
 }
 
@@ -45,7 +47,7 @@ void UVU_vk_queues::recive_queues(VkDevice device)
         vkGetDeviceQueue(device, que->queueFamilyIndex, que->queueIndex, &que->_queue);
 }
 
-void UVU_vk_queues::find_most_suitable_family(UVU_vk_queue *que, std::vector<VkQueueFamilyProperties> &queueFamilyProperties, std::vector<uint32_t> queues_in_family)
+void UVU_vk_queues::find_most_suitable_family(UVU_vk_queue *que, const std::vector<VkQueueFamilyProperties> &queueFamilyProperties, std::vector<uint32_t> &queues_in_family)
 {
     uint32_t max_score = 0;
     uint32_t max_pos = 0;
@@ -53,7 +55,7 @@ void UVU_vk_queues::find_most_suitable_family(UVU_vk_queue *que, std::vector<VkQ
     {
         if(queues_in_family[i] == queueFamilyProperties[i].queueCount)
             continue;
-        uint32_t a = compare_flags(que->_flags, queueFamilyProperties[i].queueFlags);
+        uint32_t a = queue_flags_score(que->_flags, queueFamilyProperties[i].queueFlags);
         if(a > max_score)
         {
             max_score = a;
@@ -62,12 +64,20 @@ void UVU_vk_queues::find_most_suitable_family(UVU_vk_queue *que, std::vector<VkQ
     }
     if(max_score == 0)
         uvu_err_exit("VK_CANT_LOCATE_QUEUE_FLAGS");
-
-    
+    que->queueFamilyIndex = max_pos;
+    que->queueIndex = queues_in_family[max_pos]++;
 }
 
-uint32_t UVU_vk_queues::compare_flags(VkQueueFlags a, VkQueueFlags b)
+uint32_t UVU_vk_queues::queue_flags_score(VkQueueFlags q, VkQueueFlags dv)
 {
-    if(a == b) return UINT32_MAX;
-    
+    uint32_t r = UINT32_MAX;
+    if(q == dv) return r;
+    if(q | dv > dv) return 0;
+    while(dv != 0)
+    {
+        if(dv & !q & 1) r--;
+        q >>= 1;
+        dv >>= 1;
+    }
+    return r;
 }
